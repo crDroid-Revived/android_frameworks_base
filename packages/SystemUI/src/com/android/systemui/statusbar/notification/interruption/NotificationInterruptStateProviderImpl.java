@@ -74,6 +74,7 @@ public class NotificationInterruptStateProviderImpl implements NotificationInter
     protected boolean mUseHeadsUp = false;
 
     private boolean mSkipHeadsUp = false;
+    private boolean mLessBoringHeadsUp = false;
 
     @Inject
     public NotificationInterruptStateProviderImpl(
@@ -280,7 +281,7 @@ public class NotificationInterruptStateProviderImpl implements NotificationInter
 
         if (shouldSkipHeadsUp(sbn)) {
             if (DEBUG_HEADS_UP) {
-                Log.d(TAG, "No alerting: gaming mode");
+                Log.d(TAG, "No alerting: gaming mode or boring apps");
             }
             return false;
         }
@@ -403,6 +404,11 @@ public class NotificationInterruptStateProviderImpl implements NotificationInter
         mSkipHeadsUp = skipHeadsUp;
     }
 
+    @Override
+    public void setUseLessBoringHeadsUp(boolean lessBoring) {
+        mLessBoringHeadsUp = lessBoring;
+    }
+
     public boolean shouldSkipHeadsUp(StatusBarNotification sbn) {
         String notificationPackageName = sbn.getPackageName().toLowerCase();
 
@@ -413,7 +419,11 @@ public class NotificationInterruptStateProviderImpl implements NotificationInter
             return !mStatusBarStateController.isDozing() && mSkipHeadsUp && !isNonInstrusive;
         }
 
-        return false;
+        boolean isLessBoring = notificationPackageName.contains("dialer") ||
+                notificationPackageName.contains("clock") ||
+                notificationPackageName.contains("messaging");
+
+        return !mStatusBarStateController.isDozing() && mLessBoringHeadsUp && !isLessBoring;
     }
 
     /**
