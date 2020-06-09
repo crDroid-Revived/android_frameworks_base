@@ -171,6 +171,8 @@ public class NotificationStackScrollLayout extends ViewGroup implements ScrollAd
     private static final String LOCKSCREEN_TRANSLUCENT_NOTIFICATIONS_BG_ENABLED =
             "lineagesecure:" +
             LineageSettings.Secure.LOCKSCREEN_TRANSLUCENT_NOTIFICATIONS_BG_ENABLED;
+    private static final String NOTIFICATION_MATERIAL_DISMISS =
+            "system:" + Settings.System.NOTIFICATION_MATERIAL_DISMISS;
 
     private static final String TAG = "StackScroller";
     private static final boolean DEBUG = false;
@@ -516,6 +518,8 @@ public class NotificationStackScrollLayout extends ViewGroup implements ScrollAd
     private float mLastSentExpandedHeight;
     private boolean mWillExpand;
 
+    private boolean mShowDimissButton;
+
     @Inject
     public NotificationStackScrollLayout(
             @Named(VIEW_CONTEXT) Context context,
@@ -606,9 +610,12 @@ public class NotificationStackScrollLayout extends ViewGroup implements ScrollAd
             } else if (key.equals(LOCKSCREEN_TRANSLUCENT_NOTIFICATIONS_BG_ENABLED)) {
                 mShouldDrawNotificationBackground = !"1".equals(newValue);
                 setWillNotDraw(!mShouldDrawNotificationBackground && onKeyguard());
+            } else if (key.equals(NOTIFICATION_MATERIAL_DISMISS)) {
+                mShowDimissButton = TunerService.parseIntegerSwitch(newValue, false);
             }
         }, HIGH_PRIORITY, Settings.Secure.NOTIFICATION_DISMISS_RTL,
-                LOCKSCREEN_TRANSLUCENT_NOTIFICATIONS_BG_ENABLED);
+                LOCKSCREEN_TRANSLUCENT_NOTIFICATIONS_BG_ENABLED,
+                NOTIFICATION_MATERIAL_DISMISS);
 
         mDeviceProvisionedController.addCallback(
                 new DeviceProvisionedListener() {
@@ -731,7 +738,7 @@ public class NotificationStackScrollLayout extends ViewGroup implements ScrollAd
                 && mStatusBarState != StatusBarState.KEYGUARD
                 && !mRemoteInputManager.getController().isRemoteInputActive();
 
-        updateFooterView(showFooterView, showDismissView);
+        updateFooterView(showFooterView, showDismissView && !mShowDimissButton);
     }
 
     /**
@@ -4458,6 +4465,7 @@ public class NotificationStackScrollLayout extends ViewGroup implements ScrollAd
     private void setIsExpanded(boolean isExpanded) {
         boolean changed = isExpanded != mIsExpanded;
         mIsExpanded = isExpanded;
+        updateFooter();
         mStackScrollAlgorithm.setIsExpanded(isExpanded);
         mAmbientState.setShadeExpanded(isExpanded);
         mStateAnimator.setShadeExpanded(isExpanded);
@@ -5646,6 +5654,12 @@ public class NotificationStackScrollLayout extends ViewGroup implements ScrollAd
     protected void inflateFooterView() {
         FooterView footerView = (FooterView) LayoutInflater.from(mContext).inflate(
                 R.layout.status_bar_notification_footer, this, false);
+        footerView.setDismissButtonClickListener(v -> {
+            if (!mShowDimissButton) {
+                mMetricsLogger.action(MetricsEvent.ACTION_DISMISS_ALL_NOTES);
+                clearNotifications(ROWS_ALL, true /* closeShade */);
+            }
+        });
         footerView.setManageButtonClickListener(this::manageNotifications);
         setFooterView(footerView);
     }
