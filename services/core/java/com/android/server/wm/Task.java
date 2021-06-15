@@ -313,6 +313,9 @@ class Task extends WindowContainer<WindowContainer> {
     String mCallingPackage;
     String mCallingFeatureId;
 
+    // Package name
+    String mPackageName;
+
     private final Rect mTmpStableBounds = new Rect();
     private final Rect mTmpNonDecorBounds = new Rect();
     private final Rect mTmpBounds = new Rect();
@@ -949,6 +952,9 @@ class Task extends WindowContainer<WindowContainer> {
      */
     void setIntent(ActivityRecord r, @Nullable Intent intent, @Nullable ActivityInfo info) {
         boolean updateIdentity = false;
+        if(info != null){
+            mPackageName = info.packageName;
+        }
         if (this.intent == null) {
             updateIdentity = true;
         } else if (!mNeverRelinquishIdentity) {
@@ -968,6 +974,9 @@ class Task extends WindowContainer<WindowContainer> {
     /** Sets the original intent, _without_ updating the calling uid or package. */
     private void setIntent(Intent _intent, ActivityInfo info) {
         if (!isLeafTask()) return;
+        if(info != null){
+            mPackageName = info.packageName;
+        }
         if (intent == null) {
             mNeverRelinquishIdentity = (info.flags & FLAG_RELINQUISH_TASK_IDENTITY) == 0;
         } else if (mNeverRelinquishIdentity) {
