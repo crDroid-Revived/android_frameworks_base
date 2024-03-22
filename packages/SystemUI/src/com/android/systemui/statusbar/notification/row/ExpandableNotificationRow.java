@@ -47,6 +47,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.os.UserHandle;
 import android.service.notification.StatusBarNotification;
 import android.util.ArraySet;
 import android.util.AttributeSet;
@@ -453,6 +454,8 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
     public void setEntry(@NonNull NotificationEntry entry) {
         mEntry = entry;
         mStatusBarNotification = entry.notification;
+        mImageResolver = new NotificationInlineImageResolver(userContextForEntry(mContext, entry),
+                new NotificationInlineImageCache());
         if (mStatusBarNotification != null) {
             updateAlarmOrCall();
             AppLockManager appLockManager = (AppLockManager) mContext
@@ -1660,8 +1663,6 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
         mFalsingManager = Dependency.get(FalsingManager.class);  // TODO: inject into a controller.
         mNotificationInflater = new NotificationContentInflater(this);
         mMenuRow = new NotificationMenuRow(mContext);
-        mImageResolver = new NotificationInlineImageResolver(context,
-                new NotificationInlineImageCache());
         mMediaManager = Dependency.get(NotificationMediaManager.class);
         initDimens();
     }
@@ -1672,6 +1673,14 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
 
     public void setStatusBarStateController(StatusBarStateController statusBarStateController) {
         mStatusbarStateController = statusBarStateController;
+    }
+
+    private static Context userContextForEntry(Context base, NotificationEntry entry) {
+        if (base.getUserId() == entry.notification.getNormalizedUserId()) {
+            return base;
+        }
+        return base.createContextAsUser(
+                UserHandle.of(entry.notification.getNormalizedUserId()), /* flags= */ 0);
     }
 
     private void initDimens() {
