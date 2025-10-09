@@ -5253,15 +5253,8 @@ public class NotificationManagerService extends SystemService {
             final Uri soundUri = updateChannel.getSound();
             final Uri originalSoundUri =
                     (originalChannel != null) ? originalChannel.getSound() : null;
-            if (soundUri != null && !Objects.equals(originalSoundUri, soundUri) &&
-                ContentResolver.SCHEME_CONTENT.equals(soundUri.getScheme())) {
-                Binder.withCleanCallingIdentity(() -> {
-                    mUgmInternal.checkGrantUriPermission(sourceUid, null,
-                            ContentProvider.getUriWithoutUserId(soundUri),
-                            Intent.FLAG_GRANT_READ_URI_PERMISSION,
-                            ContentProvider.getUserIdFromUri(soundUri,
-                            UserHandle.getUserId(sourceUid)));
-                });
+            if (soundUri != null && !Objects.equals(originalSoundUri, soundUri)) {
+                PermissionHelper.grantUriPermission(mUgmInternal, soundUri, sourceUid);
             }
         }
 
